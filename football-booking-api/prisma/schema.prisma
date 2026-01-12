@@ -1,0 +1,126 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =========================
+// ENUM
+// =========================
+enum Role {
+  ADMIN
+  OWNER
+  USER
+}
+
+enum FieldStatus {
+  ACTIVE
+  MAINTENANCE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+// =========================
+// USER
+// =========================
+model User {
+  id        Int      @id @default(autoincrement())
+  phone     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+
+  fields    Field[]  @relation("OwnerFields")
+  bookings  Booking[]
+}
+
+// =========================
+// FIELD (SÂN)
+// =========================
+model Field {
+  id        Int         @id @default(autoincrement())
+  name      String
+  type      Int
+  location  String?
+  openTime  String
+  closeTime String
+  status    FieldStatus @default(ACTIVE)
+
+  ownerId   Int
+  owner     User        @relation("OwnerFields", fields: [ownerId], references: [id])
+
+  slots     FieldSlot[]
+  bookings  Booking[]
+  blocks    FieldBlock[]
+
+  createdAt DateTime @default(now())
+}
+
+// =========================
+// SLOT (KHUNG GIỜ)
+// =========================
+model FieldSlot {
+  id        Int      @id @default(autoincrement())
+  fieldId   Int
+  startTime String
+  endTime   String
+  price     Int
+  isPeak    Boolean  @default(false)
+
+  field     Field    @relation(fields: [fieldId], references: [id])
+  bookings  Booking[]
+
+  @@unique([fieldId, startTime, endTime])
+}
+
+// =========================
+// BOOKING
+// =========================
+model Booking {
+  id        Int           @id @default(autoincrement())
+  date      DateTime
+  status    BookingStatus @default(PENDING)
+
+  userId      Int?
+  guestName   String?
+  guestPhone  String?
+  fieldId     Int
+  slotId      Int
+
+  user      User?      @relation(fields: [userId], references: [id])
+  field     Field      @relation(fields: [fieldId], references: [id])
+  slot      FieldSlot  @relation(fields: [slotId], references: [id])
+
+  createdAt DateTime @default(now())
+  expiresAt   DateTime @default(dbgenerated("now() + interval '5 minutes'"))
+}
+
+
+// =========================
+// BLOCK (KHOÁ SÂN)
+// =========================
+model FieldBlock {
+  id        Int      @id @default(autoincrement())
+  fieldId   Int
+  date      DateTime
+  startTime String
+  endTime   String
+  reason    String?
+
+  field     Field    @relation(fields: [fieldId], references: [id])
+
+  createdAt DateTime @default(now())
+}
