@@ -47,7 +47,4 @@ Project tập trung vào **backend logic**, thiết kế API, database và xử 
 ---
 
 ## ⚙️ Cách chạy project (Local)
-### 1️⃣ Clone source
-```bash
-git clone https://github.com/Manhhust57/online-booking-system.git
-cd online-booking-system
+
